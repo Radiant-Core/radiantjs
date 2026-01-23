@@ -10,7 +10,7 @@
 
 /// <reference types="node" />
 
-declare module 'radiantjs' {
+declare module '@radiantblockchain/radiantjs' {
 
     export namespace crypto {
         class BN { }
@@ -41,8 +41,13 @@ declare module 'radiantjs' {
         class Signature {
             static fromDER(sig: Buffer): Signature;
             static fromString(data: string): Signature;
-            SIGHASH_ALL: number;
+            static SIGHASH_ALL: number;
+            static SIGHASH_SINGLE: number;
+            static SIGHASH_NONE: number;
+            static SIGHASH_ANYONECANPAY: number;
+            static SIGHASH_FORKID: number;
             toString(): string;
+            toBuffer(): Buffer;
         }
     }
 
@@ -77,12 +82,17 @@ declare module 'radiantjs' {
         }
 
         class Input {
+            constructor(object: any);
             readonly prevTxId: Buffer;
             readonly outputIndex: number;
             readonly sequenceNumber: number;
             readonly script: Script;
             output?: Output;
             isValidSignature(tx: Transaction, sig: any): boolean;
+        }
+
+        class Sighash {
+            static sign(...args: any[]): crypto.Signature;
         }
     }
 
@@ -97,12 +107,13 @@ declare module 'radiantjs' {
 
         constructor(serialized?: any);
 
-        from(utxos: Transaction.UnspentOutput | Transaction.UnspentOutput[]): this;
+        from(utxos: Transaction.UnspentOutput | Transaction.UnspentOutput[] | object): this;
         to(address: Address[] | Address | string, amount: number): this;
         change(address: Address | string): this;
         fee(amount: number): this;
         feePerKb(amount: number): this;
         sign(privateKey: PrivateKey | string): this;
+        seal(): this;
         applySignature(sig: crypto.Signature): this;
         addInput(input: Transaction.Input): this;
         addOutput(output: Transaction.Output): this;
@@ -316,7 +327,7 @@ declare module 'radiantjs' {
         function buildWitnessMultisigOutFromScript(script: Script): Script;
         function buildMultisigIn(pubkeys: PublicKey[], threshold: number, signatures: Buffer[], opts: object): Script;
         function buildP2SHMultisigIn(pubkeys: PublicKey[], threshold: number, signatures: Buffer[], opts: object): Script;
-        function buildPublicKeyHashOut(address: Address): Script;
+        function buildPublicKeyHashOut(address: Address | string): Script;
         function buildPublicKeyOut(pubkey: PublicKey): Script;
         function buildDataOut(data: string | Buffer, encoding?: string): Script;
         function buildScriptHashOut(script: Script): Script;
@@ -343,7 +354,8 @@ declare module 'radiantjs' {
     }
 
     export class Script {
-        constructor(data: string | object);
+        constructor(data?: string | object);
+        readonly chunks: { opcodenum: number, buf: Uint8Array }[];
 
         set(obj: object): this;
 
@@ -394,6 +406,10 @@ declare module 'radiantjs' {
         getSignatureOperationsCount(accurate: boolean): number;
 
         toAddress(network?: string): Address;
+
+        static fromString(script: string): Script;
+        static fromASM(script: string): Script;
+        static fromHex(script: string): Script;
     }
 
     export interface Util {
@@ -423,6 +439,8 @@ declare module 'radiantjs' {
         readonly type: string;
 
         constructor(data: Buffer | Uint8Array | string | object, network?: Networks.Network | string, type?: string);
+        static fromString(address: string): Address;
+        toObject(): { hash: string; type: string; network: string; };
     }
 
     export class Unit {
@@ -438,4 +456,190 @@ declare module 'radiantjs' {
         toBits(): number;
         toSatoshis(): number;
     }
+
+    export class BlockHeader {
+        readonly bits: number;
+        readonly merkleRoot: Uint8Array;
+        readonly nonce: number;
+        readonly prevHash: Uint8Array;
+        readonly time: number;
+        readonly timestamp: number;
+        readonly version: number;
+        readonly hash: string;
+        readonly id: string;
+        static fromString(header: string): BlockHeader;
+        validProofOfWork(): boolean;
+    }
+
+    export const Opcode: {
+        OP_FALSE: number;
+        OP_0: number;
+        OP_PUSHDATA1: number;
+        OP_PUSHDATA2: number;
+        OP_PUSHDATA4: number;
+        OP_1NEGATE: number;
+        OP_RESERVED: number;
+        OP_TRUE: number;
+        OP_1: number;
+        OP_2: number;
+        OP_3: number;
+        OP_4: number;
+        OP_5: number;
+        OP_6: number;
+        OP_7: number;
+        OP_8: number;
+        OP_9: number;
+        OP_10: number;
+        OP_11: number;
+        OP_12: number;
+        OP_13: number;
+        OP_14: number;
+        OP_15: number;
+        OP_16: number;
+        OP_NOP: number;
+        OP_VER: number;
+        OP_IF: number;
+        OP_NOTIF: number;
+        OP_VERIF: number;
+        OP_VERNOTIF: number;
+        OP_ELSE: number;
+        OP_ENDIF: number;
+        OP_VERIFY: number;
+        OP_RETURN: number;
+        OP_TOALTSTACK: number;
+        OP_FROMALTSTACK: number;
+        OP_2DROP: number;
+        OP_2DUP: number;
+        OP_3DUP: number;
+        OP_2OVER: number;
+        OP_2ROT: number;
+        OP_2SWAP: number;
+        OP_IFDUP: number;
+        OP_DEPTH: number;
+        OP_DROP: number;
+        OP_DUP: number;
+        OP_NIP: number;
+        OP_OVER: number;
+        OP_PICK: number;
+        OP_ROLL: number;
+        OP_ROT: number;
+        OP_SWAP: number;
+        OP_TUCK: number;
+        OP_CAT: number;
+        OP_SPLIT: number;
+        OP_NUM2BIN: number;
+        OP_BIN2NUM: number;
+        OP_SIZE: number;
+        OP_INVERT: number;
+        OP_AND: number;
+        OP_OR: number;
+        OP_XOR: number;
+        OP_EQUAL: number;
+        OP_EQUALVERIFY: number;
+        OP_RESERVED1: number;
+        OP_RESERVED2: number;
+        OP_1ADD: number;
+        OP_1SUB: number;
+        OP_2MUL: number;
+        OP_2DIV: number;
+        OP_NEGATE: number;
+        OP_ABS: number;
+        OP_NOT: number;
+        OP_0NOTEQUAL: number;
+        OP_ADD: number;
+        OP_SUB: number;
+        OP_MUL: number;
+        OP_DIV: number;
+        OP_MOD: number;
+        OP_LSHIFT: number;
+        OP_RSHIFT: number;
+        OP_BOOLAND: number;
+        OP_BOOLOR: number;
+        OP_NUMEQUAL: number;
+        OP_NUMEQUALVERIFY: number;
+        OP_NUMNOTEQUAL: number;
+        OP_LESSTHAN: number;
+        OP_GREATERTHAN: number;
+        OP_LESSTHANOREQUAL: number;
+        OP_GREATERTHANOREQUAL: number;
+        OP_MIN: number;
+        OP_MAX: number;
+        OP_WITHIN: number;
+        OP_RIPEMD160: number;
+        OP_SHA1: number;
+        OP_SHA256: number;
+        OP_HASH160: number;
+        OP_HASH256: number;
+        OP_CODESEPARATOR: number;
+        OP_CHECKSIG: number;
+        OP_CHECKSIGVERIFY: number;
+        OP_CHECKMULTISIG: number;
+        OP_CHECKMULTISIGVERIFY: number;
+        OP_CHECKLOCKTIMEVERIFY: number;
+        OP_CHECKSEQUENCEVERIFY: number;
+        OP_NOP1: number;
+        OP_NOP2: number;
+        OP_NOP3: number;
+        OP_NOP4: number;
+        OP_NOP5: number;
+        OP_NOP6: number;
+        OP_NOP7: number;
+        OP_NOP8: number;
+        OP_NOP9: number;
+        OP_NOP10: number;
+        OP_CHECKDATASIG: number;
+        OP_CHECKDATASIGVERIFY: number;
+        OP_REVERSEBYTES: number;
+        OP_STATESEPARATOR: number;
+        OP_STATESEPARATORINDEX_UTXO: number;
+        OP_STATESEPARATORINDEX_OUTPUT: number;
+        OP_INPUTINDEX: number;
+        OP_ACTIVEBYTECODE: number;
+        OP_TXVERSION: number;
+        OP_TXINPUTCOUNT: number;
+        OP_TXOUTPUTCOUNT: number;
+        OP_TXLOCKTIME: number;
+        OP_UTXOVALUE: number;
+        OP_UTXOBYTECODE: number;
+        OP_OUTPOINTTXHASH: number;
+        OP_OUTPOINTINDEX: number;
+        OP_INPUTBYTECODE: number;
+        OP_INPUTSEQUENCENUMBER: number;
+        OP_OUTPUTVALUE: number;
+        OP_OUTPUTBYTECODE: number;
+        OP_SHA512_256: number;
+        OP_HASH512_256: number;
+        OP_PUSHINPUTREF: number;
+        OP_REQUIREINPUTREF: number;
+        OP_DISALLOWPUSHINPUTREF: number;
+        OP_DISALLOWPUSHINPUTREFSIBLING: number;
+        OP_REFHASHDATASUMMARY_UTXO: number;
+        OP_REFHASHVALUESUM_UTXOS: number;
+        OP_REFHASHDATASUMMARY_OUTPUT: number;
+        OP_REFHASHVALUESUM_OUTPUTS: number;
+        OP_PUSHINPUTREFSINGLETON: number;
+        OP_REFTYPE_UTXO: number;
+        OP_REFTYPE_OUTPUT: number;
+        OP_REFVALUESUM_UTXOS: number;
+        OP_REFVALUESUM_OUTPUTS: number;
+        OP_REFOUTPUTCOUNT_UTXOS: number;
+        OP_REFOUTPUTCOUNT_OUTPUTS: number;
+        OP_REFOUTPUTCOUNTZEROVALUED_UTXOS: number;
+        OP_REFOUTPUTCOUNTZEROVALUED_OUTPUTS: number;
+        OP_REFDATASUMMARY_UTXO: number;
+        OP_REFDATASUMMARY_OUTPUT: number;
+        OP_CODESCRIPTHASHVALUESUM_UTXOS: number;
+        OP_CODESCRIPTHASHVALUESUM_OUTPUTS: number;
+        OP_CODESCRIPTHASHOUTPUTCOUNT_UTXOS: number;
+        OP_CODESCRIPTHASHOUTPUTCOUNT_OUTPUTS: number;
+        OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_UTXOS: number;
+        OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_OUTPUTS: number;
+        OP_CODESCRIPTBYTECODE_UTXO: number;
+        OP_CODESCRIPTBYTECODE_OUTPUT: number;
+        OP_STATESCRIPTBYTECODE_UTXO: number;
+        OP_STATESCRIPTBYTECODE_OUTPUT: number;
+        OP_PUBKEYHASH: number;
+        OP_PUBKEY: number;
+        OP_INVALIDOPCODE: number;
+    };
 }
