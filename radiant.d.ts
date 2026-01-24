@@ -638,6 +638,7 @@ declare module '@radiantblockchain/radiantjs' {
         OP_CODESCRIPTBYTECODE_OUTPUT: number;
         OP_STATESCRIPTBYTECODE_UTXO: number;
         OP_STATESCRIPTBYTECODE_OUTPUT: number;
+        OP_PUSH_TX_STATE: number;
         OP_PUBKEYHASH: number;
         OP_PUBKEY: number;
         OP_INVALIDOPCODE: number;
