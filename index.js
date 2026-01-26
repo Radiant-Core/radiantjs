@@ -66,3 +66,6 @@ radiantjs.deps._ = require('./lib/util/_')
 
 // Internal usage, exposed for testing/advanced tweaking
 radiantjs.Transaction.sighash = require('./lib/transaction/sighash')
+
+// Glyph v2 Token Standard
+radiantjs.Glyph = require('./lib/glyph')
