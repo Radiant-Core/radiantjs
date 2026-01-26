@@ -4,6 +4,7 @@
   "version": "1.9.5",
   "author": "Radiant Blockchain <radiantblockchain@protonmail.com>",
   "main": "index.js",
+  "types": "radiant.d.ts",
   "scripts": {
     "lint": "standard",
     "lint_test": "standard && mocha",
