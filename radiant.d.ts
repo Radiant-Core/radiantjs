@@ -643,4 +643,117 @@ declare module '@radiantblockchain/radiantjs' {
         OP_PUBKEY: number;
         OP_INVALIDOPCODE: number;
     };
+
+    // Glyph v2 Token Standard Module
+    export namespace Glyph {
+        // Magic bytes
+        const GLYPH_MAGIC: Buffer;
+        const GLYPH_MAGIC_HEX: string;
+
+        // Versions
+        const GlyphVersion: {
+            V1: number;
+            V2: number;
+        };
+
+        // Protocol IDs
+        const GlyphProtocol: {
+            GLYPH_FT: 1;
+            GLYPH_NFT: 2;
+            GLYPH_DAT: 3;
+            GLYPH_DMINT: 4;
+            GLYPH_MUT: 5;
+            GLYPH_BURN: 6;
+            GLYPH_CONTAINER: 7;
+            GLYPH_ENCRYPTED: 8;
+            GLYPH_TIMELOCK: 9;
+            GLYPH_AUTHORITY: 10;
+            GLYPH_WAVE: 11;
+        };
+
+        // Algorithm IDs
+        const DmintAlgorithm: {
+            SHA256D: number;
+            BLAKE3: number;
+            K12: number;
+            ARGON2ID_LIGHT: number;
+            RANDOMX_LIGHT: number;
+        };
+
+        // DAA Modes
+        const DaaMode: {
+            FIXED: number;
+            EPOCH: number;
+            ASERT: number;
+            LWMA: number;
+            SCHEDULE: number;
+        };
+
+        // Limits
+        const GlyphLimits: {
+            MAX_NAME_SIZE: number;
+            MAX_DESC_SIZE: number;
+            MAX_PATH_SIZE: number;
+            MAX_MIME_SIZE: number;
+            MAX_METADATA_SIZE: number;
+            MAX_COMMIT_ENVELOPE_SIZE: number;
+            MAX_REVEAL_ENVELOPE_A_SIZE: number;
+            MAX_REVEAL_ENVELOPE_B_SIZE: number;
+            MAX_UPDATE_ENVELOPE_SIZE: number;
+            MAX_INLINE_FILE_SIZE: number;
+            MAX_TOTAL_INLINE_SIZE: number;
+            MAX_PROTOCOLS: number;
+        };
+
+        // Envelope flags
+        const EnvelopeFlags: {
+            HAS_CONTENT_ROOT: number;
+            HAS_CONTROLLER: number;
+            HAS_PROFILE_HINT: number;
+            IS_REVEAL: number;
+        };
+
+        // Encoding functions
+        function encodeMetadata(metadata: object): Buffer;
+        function computeCommitHash(metadata: object | Buffer): Buffer;
+        function encodeCommitEnvelope(options: {
+            commitHash: Buffer;
+            flags?: number;
+            contentRoot?: Buffer;
+            controller?: Buffer;
+        }): Buffer;
+        function encodeRevealEnvelope(options: {
+            metadata: object | Buffer;
+            files?: Buffer[];
+        }): Buffer[];
+
+        // Decoding functions
+        function isGlyphTransaction(tx: Transaction): boolean;
+        function parseGlyphTransaction(tx: Transaction): {
+            type: 'commit' | 'reveal';
+            outputIndex?: number;
+            inputIndex?: number;
+            envelope: {
+                type: string;
+                isReveal: boolean;
+                version: number;
+                flags: number;
+                commitHash?: Buffer;
+                contentRoot?: Buffer;
+                controller?: Buffer;
+                metadata?: object;
+                rawMetadata?: Buffer;
+                files?: Buffer[];
+            };
+        } | null;
+        function decodeEnvelope(scriptBuf: Buffer): object | null;
+        function decodeMetadata(buf: Buffer): object;
+        function getGlyphId(txid: string, vout: number): string;
+        function parseGlyphId(glyphId: string): { txid: string; vout: number };
+
+        // Validation functions
+        function validateProtocols(protocols: number[]): { valid: boolean; error?: string };
+        function validateMetadata(metadata: object): { valid: boolean; errors: string[] };
+        function isValidGlyph(metadata: object): boolean;
+    }
 }
