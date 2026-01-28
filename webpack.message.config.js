@@ -2,7 +2,7 @@ var path = require('path')
 var webpack = require('webpack')
 
 module.exports = {
-  entry: './' + 'index.js',
+  entry: './message/index.js',
   resolve: {
     fallback: {
       'assert': require.resolve('assert/'),
@@ -16,12 +16,15 @@ module.exports = {
       Buffer: ['buffer', 'Buffer']
     })
   ],
+  externals: {
+    '../../': 'radiantjs'
+  },
   output: {
-    library: 'radiantjs',
+    library: 'radiantMessage',
     libraryTarget: 'umd',
     globalObject: 'this',
     path: path.join(__dirname, '/'),
-    filename: 'radiant.min.js'
+    filename: 'radiant-message.min.js'
   },
   mode: 'production'
 }
