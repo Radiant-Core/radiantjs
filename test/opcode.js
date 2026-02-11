@@ -83,8 +83,8 @@ describe('Opcode', function () {
   })
 
   describe('@map', function () {
-    it('should have a map containing 126 elements', function () {
-      Object.keys(Opcode.map).length.should.equal(126)
+    it('should have a map containing 172 elements', function () {
+      Object.keys(Opcode.map).length.should.equal(172)
     })
   })
 
@@ -156,6 +156,51 @@ describe('Opcode', function () {
   describe('#inspect', function () {
     it('should output opcode by name, hex, and decimal', function () {
       Opcode.fromString('OP_NOP').inspect().should.equal('<Opcode: OP_NOP, hex: 61, decimal: 97>')
+    })
+  })
+
+  describe('V2 Hard Fork opcodes', function () {
+    it('should have OP_BLAKE3 at 238 (0xee)', function () {
+      Opcode.map.OP_BLAKE3.should.equal(238)
+      Opcode('OP_BLAKE3').toNumber().should.equal(238)
+    })
+
+    it('should have OP_K12 at 239 (0xef)', function () {
+      Opcode.map.OP_K12.should.equal(239)
+      Opcode('OP_K12').toNumber().should.equal(239)
+    })
+
+    it('should reverse-map OP_BLAKE3 and OP_K12', function () {
+      Opcode.reverseMap[238].should.equal('OP_BLAKE3')
+      Opcode.reverseMap[239].should.equal('OP_K12')
+    })
+
+    it('should round-trip OP_BLAKE3 through string conversion', function () {
+      Opcode.fromString('OP_BLAKE3').toString().should.equal('OP_BLAKE3')
+      Opcode.fromNumber(238).toString().should.equal('OP_BLAKE3')
+    })
+
+    it('should round-trip OP_K12 through string conversion', function () {
+      Opcode.fromString('OP_K12').toString().should.equal('OP_K12')
+      Opcode.fromNumber(239).toString().should.equal('OP_K12')
+    })
+
+    it('should have OP_LSHIFT at 152 (0x98)', function () {
+      Opcode.map.OP_LSHIFT.should.equal(152)
+    })
+
+    it('should have OP_RSHIFT at 153 (0x99)', function () {
+      Opcode.map.OP_RSHIFT.should.equal(153)
+    })
+
+    it('should round-trip through buffer for V2 opcodes', function () {
+      var buf238 = Buffer.from('ee', 'hex')
+      Opcode.fromBuffer(buf238).toBuffer().should.deep.equal(buf238)
+      Opcode.fromBuffer(buf238).toNumber().should.equal(238)
+
+      var buf239 = Buffer.from('ef', 'hex')
+      Opcode.fromBuffer(buf239).toBuffer().should.deep.equal(buf239)
+      Opcode.fromBuffer(buf239).toNumber().should.equal(239)
     })
   })
 })
