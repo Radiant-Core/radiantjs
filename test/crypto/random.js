@@ -1,5 +1,6 @@
 'use strict'
 const Buffer = require('../../lib/util/bufferUtil');
+require('chai').should()
 var bsv = require('../..')
 var Random = bsv.crypto.Random
 

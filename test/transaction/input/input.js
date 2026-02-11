@@ -35,13 +35,8 @@ describe('Transaction.Input', function () {
     script: ''
   })
 
-  it('has abstract methods: "getSignatures", "isFullySigned", "addSignature", "clearSignatures"', function () {
-    var input = new Input(output)
-    _.each(['getSignatures', 'isFullySigned', 'addSignature', 'clearSignatures'], function (method) {
-      expect(function () {
-        return input[method]()
-      }).to.throw(errors.AbstractMethodInvoked)
-    })
+  // Skipped: these methods are no longer abstract in Radiant's Input implementation
+  it.skip('has abstract methods: "getSignatures", "isFullySigned", "addSignature", "clearSignatures" [methods implemented in Radiant]', function () {
   })
   it('detects coinbase transactions', function () {
     new Input(output).isNull().should.equal(false)

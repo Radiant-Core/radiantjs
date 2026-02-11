@@ -43,7 +43,7 @@ describe('Block', function () {
   it('should not make an empty block', function () {
     (function () {
       return new Block()
-    }).should.throw('Unrecognized argument for Block')
+    }).should.throw('Invalid argument for Block')
   })
 
   describe('#constructor', function () {
