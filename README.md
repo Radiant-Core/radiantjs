@@ -12,6 +12,21 @@ npm install @radiantblockchain/radiantjs
 Changelog
 ---------
 
+**2.0.0** (February 2026)
+
+* **V2 Hard Fork Support** — Full interpreter support for all 6 fork-gated opcodes:
+  * `OP_BLAKE3` (0xee) — Blake3 hash opcode (pure JS implementation)
+  * `OP_K12` (0xef) — KangarooTwelve hash opcode (pure JS implementation)
+  * `OP_LSHIFT` (0x98) — Bitwise left shift (re-enabled)
+  * `OP_RSHIFT` (0x99) — Bitwise right shift (re-enabled)
+  * `OP_2MUL` (0x8d) — Multiply by 2 (re-enabled, fork-gated behind SCRIPT_ENHANCED_REFERENCES)
+  * `OP_2DIV` (0x8e) — Divide by 2 with truncation toward zero (re-enabled)
+* All new opcodes gated behind `SCRIPT_ENHANCED_REFERENCES` flag
+* Fixed `stepListener` callback to provide copies of stack/altstack (prevents external modification)
+* Fixed 560 pre-existing test failures (3299 passing, 0 failing)
+* Added Glyph v2 module: `lib/glyph/` (encoder, decoder, validator, constants)
+* Added TypeScript declarations for Glyph v2 in `radiant.d.ts`
+
 **1.9.4**
 
 * Add support for Radiant Node 1.2.0 
