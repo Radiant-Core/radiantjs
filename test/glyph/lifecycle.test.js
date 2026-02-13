@@ -14,7 +14,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 
-const radiantjs = require('../../lib');
+const radiantjs = require('../../');
 const { PrivateKey, Transaction, Script, Address } = radiantjs;
 const glyph = require('../../lib/glyph');
 

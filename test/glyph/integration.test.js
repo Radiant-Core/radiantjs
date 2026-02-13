@@ -15,7 +15,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 
-const radiantjs = require('../../lib');
+const radiantjs = require('../../');
 const glyph = require('../../lib/glyph');
 
 describe('Cross-Repository Integration', function() {

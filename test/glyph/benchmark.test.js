@@ -14,9 +14,9 @@
 const chai = require('chai');
 const expect = chai.expect;
 
-const radiantjs = require('../../lib');
+const radiantjs = require('../../');
 const glyph = require('../../lib/glyph');
-const crypto = require('../../lib/crypto');
+const crypto = radiantjs.crypto;
 
 describe('Glyph Performance Benchmarks', function() {
   
