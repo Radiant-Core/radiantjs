@@ -12,7 +12,7 @@
 If you discover a security vulnerability in radiantjs, please report it responsibly:
 
 1. **Do NOT** open a public GitHub issue
-2. Email: radiantblockchain@protonmail.com
+2. Email: info@radiantfoundation.org
 3. Include:
    - Description of the vulnerability
    - Steps to reproduce
