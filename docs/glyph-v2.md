@@ -1,259 +1,167 @@
-# Glyph v2 Token Standard Guide
+# Developer's Guide: Glyph v2 Tokens with radiantjs
 
-This guide covers using radiantjs with the Glyph v2 Token Standard for creating, parsing, and validating tokens on the Radiant blockchain.
+This guide provides a practical walkthrough for using `radiantjs` to create, parse, and manage Glyph v2 tokens on the Radiant blockchain.
 
 ## Installation
 
 ```bash
-npm install @radiantblockchain/radiantjs
+npm install @radiant-core/radiantjs
 ```
 
-## Quick Start
+## Quick Start: Creating an NFT
+
+This example demonstrates the complete end-to-end process of creating a new NFT, from defining metadata to building the commit and reveal transactions.
 
 ```javascript
-const radiantjs = require('@radiantblockchain/radiantjs');
-const { Glyph } = radiantjs;
+import { Transaction, PrivateKey, Glyph, Script } from '@radiant-core/radiantjs';
 
-// Validate metadata
+// --- 1. Setup ---
+const privateKey = new PrivateKey('your-private-key-in-WIF-format');
+const address = privateKey.toAddress();
+console.log(`Creator address: ${address.toString()}`);
+
+// You need UTXOs to fund the transactions. Get these from an indexer.
+const utxos = [
+    {
+        txId: '...',
+        outputIndex: 0,
+        script: Script.fromAddress(address).toHex(),
+        satoshis: 100000 
+    }
+];
+
+// --- 2. Define NFT Metadata ---
 const metadata = {
   v: 2,
-  type: 'token',
-  p: [1], // GLYPH_FT
-  ticker: 'TEST',
-  name: 'Test Token'
+  p: [Glyph.Protocol.GLYPH_NFT], // Use the constant for clarity
+  name: 'My Radiant NFT',
+  desc: 'A unique digital asset, created with radiantjs.',
+  content: {
+    primary: {
+      path: 'image.jpg',
+      mime: 'image/jpeg',
+      storage: 'inline' // Indicates the image data will be in the transaction
+    }
+  }
 };
 
-const validation = Glyph.validateMetadata(metadata);
-console.log(validation.valid); // true
+// --- 3. Prepare Image Content ---
+// In a real app, you would load a file here.
+const imageBuffer = Buffer.from('This is a placeholder for the actual image data');
+
+// --- 4. Create the Glyph Object ---
+const glyph = new Glyph(metadata, imageBuffer);
+
+// --- 5. Build the Commit Transaction ---
+// This transaction creates the reference and commits to the metadata hash.
+const commitTx = new Transaction()
+    .from(utxos)
+    .addGlyph(glyph.commit(address, 1)) // Commit to your own address, 1 photon backing
+    .change(address)
+    .sign(privateKey);
+
+const serializedCommitTx = commitTx.serialize();
+console.log(`Commit Transaction ID: ${commitTx.id}`);
+// You would broadcast this transaction and wait for it to be mined.
+
+// --- 6. Build the Reveal Transaction ---
+// This transaction spends the commit output and reveals the full metadata.
+const commitUtxo = {
+    txId: commitTx.id,
+    outputIndex: 0, // The commit output is usually the first one
+    script: Script.fromAddress(address).toHex(),
+    satoshis: 1
+};
+
+// You may need a separate UTXO to pay for the reveal transaction's fee
+const fundingUtxo = utxos[0]; 
+
+const revealTx = new Transaction()
+    .from([commitUtxo, fundingUtxo])
+    .addGlyph(glyph.reveal(address, 1)) // Reveal and create the final token
+    .change(address)
+    .sign(privateKey);
+
+const serializedRevealTx = revealTx.serialize();
+console.log(`Reveal Transaction (GlyphID): ${revealTx.id}:0`);
+// Broadcast this transaction to finalize the NFT creation.
 ```
 
 ## Protocol IDs
 
-Glyph v2 defines 11 protocol IDs that can be combined:
+Glyph v2 features are enabled by combining Protocol IDs. `radiantjs` provides constants for these.
 
 | ID | Constant | Description |
 |----|----------|-------------|
 | 1 | `GLYPH_FT` | Fungible Token |
 | 2 | `GLYPH_NFT` | Non-Fungible Token |
-| 3 | `GLYPH_DAT` | Data Storage |
-| 4 | `GLYPH_DMINT` | Decentralized Minting |
-| 5 | `GLYPH_MUT` | Mutable State |
-| 6 | `GLYPH_BURN` | Explicit Burn |
-| 7 | `GLYPH_CONTAINER` | Container/Collection |
-| 8 | `GLYPH_ENCRYPTED` | Encrypted Content |
-| 9 | `GLYPH_TIMELOCK` | Timelocked Reveal |
-| 10 | `GLYPH_AUTHORITY` | Issuer Authority |
-| 11 | `GLYPH_WAVE` | WAVE Naming |
+| ... | ... | (and so on for all 11 protocols) |
 
 ```javascript
-const { GlyphProtocol } = Glyph;
+import { Glyph } from '@radiant-core/radiantjs';
 
-// Fungible Token
-const ftProtocols = [GlyphProtocol.GLYPH_FT];
+// Simple Fungible Token
+const ftProtocols = [Glyph.Protocol.GLYPH_FT];
 
-// dMint Fungible Token
-const dmintProtocols = [GlyphProtocol.GLYPH_FT, GlyphProtocol.GLYPH_DMINT];
+// A dMint (mineable) Fungible Token
+const dmintProtocols = [Glyph.Protocol.GLYPH_FT, Glyph.Protocol.GLYPH_DMINT];
 
-// Mutable NFT
-const mutableNft = [GlyphProtocol.GLYPH_NFT, GlyphProtocol.GLYPH_MUT];
+// A Mutable NFT
+const mutableNft = [Glyph.Protocol.GLYPH_NFT, Glyph.Protocol.GLYPH_MUT];
 ```
 
-## Protocol Rules
+## Validation
 
-### Requirements
-Some protocols require others:
+You can validate metadata and protocol rules before creating transactions.
 
-- `GLYPH_DMINT` requires `GLYPH_FT`
-- `GLYPH_MUT` requires `GLYPH_NFT`
-- `GLYPH_CONTAINER` requires `GLYPH_NFT`
-- `GLYPH_ENCRYPTED` requires `GLYPH_NFT`
-- `GLYPH_AUTHORITY` requires `GLYPH_NFT`
-- `GLYPH_WAVE` requires `GLYPH_NFT` + `GLYPH_MUT`
+### Validate Metadata
 
-### Exclusions
-Some protocols are mutually exclusive:
-
-- `GLYPH_FT` and `GLYPH_NFT` cannot be combined
+This checks for correct types, size limits, and required fields.
 
 ```javascript
-// Validate protocol combination
+const result = Glyph.validateMetadata(metadata);
+if (!result.valid) {
+  console.error('Metadata validation errors:', result.errors);
+}
+```
+
+### Validate Protocol Combinations
+
+This checks for dependencies (e.g., `GLYPH_DMINT` requires `GLYPH_FT`) and exclusions (e.g., `GLYPH_FT` and `GLYPH_NFT` are mutually exclusive).
+
+```javascript
 const result = Glyph.validateProtocols([1, 2]); // FT + NFT
 console.log(result.valid); // false
 console.log(result.error); // "Fungible Token and Non-Fungible Token are mutually exclusive"
 ```
 
-## Encoding Metadata
+## Parsing Glyph Transactions
 
-### Create Commit Hash
+You can parse any raw transaction to see if it contains Glyph data.
 
 ```javascript
-const metadata = {
-  v: 2,
-  type: 'token',
-  p: [2], // NFT
-  name: 'My NFT',
-  content: {
-    primary: {
-      path: '/image.png',
-      mime: 'image/png',
-      size: 1024,
-      hash: { algo: 'sha256', hex: 'abc123...' }
+import { Transaction, Glyph } from '@radiant-core/radiantjs';
+
+const tx = new Transaction('...raw-tx-hex...');
+
+if (Glyph.isGlyphTransaction(tx)) {
+    const parsed = Glyph.parseGlyphTransaction(tx);
+    
+    if (parsed) {
+        console.log(`Glyph Type: ${parsed.type}`); // 'commit' or 'reveal'
+      
+        if (parsed.envelope.isReveal) {
+            console.log('Metadata:', parsed.envelope.metadata);
+            console.log('Files:', parsed.envelope.files);
+        } else {
+            console.log('Commit Hash:', parsed.envelope.commitHash.toString('hex'));
+        }
     }
-  }
-};
-
-// Encode and get commit hash
-const commitHash = Glyph.computeCommitHash(metadata);
-console.log(commitHash.toString('hex'));
-```
-
-### Create Commit Envelope
-
-```javascript
-const commitEnvelope = Glyph.encodeCommitEnvelope({
-  commitHash: commitHash,
-  flags: 0,
-  // Optional: contentRoot, controller
-});
-```
-
-### Create Reveal Envelope
-
-```javascript
-const revealChunks = Glyph.encodeRevealEnvelope({
-  metadata: metadata,
-  files: [] // Optional inline file buffers
-});
-```
-
-## Decoding Transactions
-
-### Check for Glyph Data
-
-```javascript
-const isGlyph = Glyph.isGlyphTransaction(tx);
-```
-
-### Parse Glyph Transaction
-
-```javascript
-const parsed = Glyph.parseGlyphTransaction(tx);
-
-if (parsed) {
-  console.log(parsed.type); // 'commit' or 'reveal'
-  console.log(parsed.envelope);
-  
-  if (parsed.envelope.isReveal) {
-    console.log(parsed.envelope.metadata);
-  }
 }
-```
-
-### Decode Metadata
-
-```javascript
-const metadataBytes = Buffer.from('{"v":2,"p":[1],"ticker":"TEST"}');
-const decoded = Glyph.decodeMetadata(metadataBytes);
-console.log(decoded.ticker); // 'TEST'
-```
-
-## Validation
-
-### Validate Complete Metadata
-
-```javascript
-const result = Glyph.validateMetadata({
-  v: 2,
-  type: 'token',
-  p: [2],
-  name: 'Test NFT',
-  content: {
-    primary: {
-      path: '/image.png',
-      mime: 'image/png',
-      size: 1024,
-      hash: { algo: 'sha256', hex: 'abc...' }
-    }
-  }
-});
-
-if (!result.valid) {
-  console.log('Errors:', result.errors);
-}
-```
-
-### Quick Validation
-
-```javascript
-const isValid = Glyph.isValidGlyph(metadata);
-```
-
-## Token Type Detection
-
-```javascript
-const { getTokenType } = require('./lib/glyph/validator');
-
-getTokenType([1]);           // 'Fungible Token'
-getTokenType([1, 4]);        // 'dMint Fungible Token'
-getTokenType([2]);           // 'NFT'
-getTokenType([2, 5]);        // 'Mutable NFT'
-getTokenType([2, 7]);        // 'Container'
-getTokenType([2, 10]);       // 'Authority Token'
-getTokenType([2, 5, 11]);    // 'WAVE Name'
-```
-
-## Glyph ID Format
-
-Glyph IDs follow the format `txid:vout`:
-
-```javascript
-const glyphId = Glyph.getGlyphId('abc123...', 0);
-// 'abc123...:0'
-
-const { txid, vout } = Glyph.parseGlyphId('abc123...:0');
-// { txid: 'abc123...', vout: 0 }
-```
-
-## Constants
-
-### Size Limits
-
-```javascript
-const { GlyphLimits } = Glyph;
-
-GlyphLimits.MAX_NAME_SIZE      // 256 bytes
-GlyphLimits.MAX_DESC_SIZE      // 4096 bytes
-GlyphLimits.MAX_METADATA_SIZE  // 262144 bytes (256 KB)
-GlyphLimits.MAX_PROTOCOLS      // 16
-```
-
-### Algorithms (for dMint)
-
-```javascript
-const { DmintAlgorithm } = Glyph;
-
-DmintAlgorithm.SHA256D         // 0x00
-DmintAlgorithm.BLAKE3          // 0x01
-DmintAlgorithm.K12             // 0x02
-DmintAlgorithm.ARGON2ID_LIGHT  // 0x03
-DmintAlgorithm.RANDOMX_LIGHT   // 0x04
-```
-
-### DAA Modes (for dMint)
-
-```javascript
-const { DaaMode } = Glyph;
-
-DaaMode.FIXED     // 0x00 - Static difficulty
-DaaMode.EPOCH     // 0x01 - Bitcoin-style periodic
-DaaMode.ASERT     // 0x02 - Exponential moving average
-DaaMode.LWMA      // 0x03 - Linear weighted moving average
-DaaMode.SCHEDULE  // 0x04 - Predetermined curve
 ```
 
 ## Related Resources
 
-- [Glyph v2 Token Standard Whitepaper](https://github.com/Radiant-Core/Glyph-Token-Standards)
-- [REP-3001: Token Types](https://github.com/Radiant-Core/REP)
-- [RadiantScript Contract Templates](https://github.com/Radiant-Core/RadiantScript)
-- [@radiantblockchain/constants](https://github.com/Radiant-Core/radiantblockchain-constants)
+- **Whitepaper**: [Glyph v2 Token Standard](https://github.com/Radiant-Core/Glyph-Token-Standards/blob/main/Glyph_v2_Token_Standard_Whitepaper.md)
+- **Technical Reference**: [RXinDexer Documentation](https://github.com/Radiant-Core/RXinDexer/tree/main/docs)
+- **Smart Contracts**: [RadiantScript Contract Templates](https://github.com/Radiant-Core/RadiantScript)
