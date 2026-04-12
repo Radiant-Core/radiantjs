@@ -10,7 +10,7 @@
 
 /// <reference types="node" />
 
-declare module '@radiantblockchain/radiantjs' {
+declare module '@radiant-core/radiantjs' {
 
     export namespace crypto {
         class BN { }
@@ -756,4 +756,8 @@ declare module '@radiantblockchain/radiantjs' {
         function validateMetadata(metadata: object): { valid: boolean; errors: string[] };
         function isValidGlyph(metadata: object): boolean;
     }
+}
+
+declare module '@radiantblockchain/radiantjs' {
+    export * from '@radiant-core/radiantjs'
 }

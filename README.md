@@ -6,7 +6,7 @@ Javascript Radiant Blockchain (RXD) library.
 https://radiantblockchain.org
 
 ```
-npm install @radiantblockchain/radiantjs
+npm install @radiant-core/radiantjs
 ```
 
 Changelog
