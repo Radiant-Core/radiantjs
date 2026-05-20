@@ -12,6 +12,15 @@ npm install @radiant-core/radiantjs
 Changelog
 ---------
 
+**2.0.2** (May 2026)
+
+* Fix `Hash.blake3` and `Hash.k12` to match Radiant-Core C++ consensus across all input sizes. Previous hand-rolled implementations were correct for inputs of one BLAKE3 block (≤ 64 bytes) or one K12 chunk (≤ 8191 bytes) respectively, but diverged for longer inputs — notably the 72-byte dMint preimage. Now delegate to `@noble/hashes`, which is audited and matches the C++ reference across all sizes verified.
+* Added `@noble/hashes` as a runtime dependency.
+
+**2.0.1** (May 2026)
+
+* Fix `lib/util/bufferUtil.js` runtime detection. Previously used `typeof window !== 'undefined'` to choose between Node's native `Buffer` and the `buffer` polyfill, which broke in jsdom-based test environments (e.g. vitest + jsdom). Now uses `process.versions.node` so Node-on-jsdom resolves to native `Buffer`.
+
 **2.0.0** (May 2026)
 
 * **V2 Hard Fork Support** — Full interpreter support for all 6 fork-gated opcodes:
