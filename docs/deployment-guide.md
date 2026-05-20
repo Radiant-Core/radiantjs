@@ -5,7 +5,7 @@ This guide covers deploying Glyph v2 tokens on the Radiant blockchain using `rad
 ## Prerequisites
 
 ```bash
-npm install @radiantblockchain/radiantjs @radiantblockchain/constants
+npm install @radiant-core/radiantjs @radiant-core/constants
 ```
 
 ## Quick Start
@@ -13,8 +13,8 @@ npm install @radiantblockchain/radiantjs @radiantblockchain/constants
 ### 1. Create Token Metadata
 
 ```javascript
-const { Glyph } = require('@radiantblockchain/radiantjs');
-const { GlyphProtocol, GlyphVersion } = require('@radiantblockchain/constants');
+const { Glyph } = require('@radiant-core/radiantjs');
+const { GlyphProtocol, GlyphVersion } = require('@radiant-core/constants');
 
 // Fungible Token
 const ftMetadata = {
@@ -78,7 +78,7 @@ const metadata = {
 For proof-of-work distributed minting:
 
 ```javascript
-const { DmintAlgorithm, DaaMode } = require('@radiantblockchain/constants');
+const { DmintAlgorithm, DaaMode } = require('@radiant-core/constants');
 
 const metadata = {
   v: GlyphVersion.V2,
@@ -201,7 +201,7 @@ const metadata = {
 Always validate before deployment:
 
 ```javascript
-const { validateProtocols, validateMetadata } = require('@radiantblockchain/radiantjs').Glyph.Validator;
+const { validateProtocols, validateMetadata } = require('@radiant-core/radiantjs').Glyph.Validator;
 
 // Validate protocol combination
 const protocolResult = validateProtocols(metadata.p);
@@ -230,7 +230,7 @@ if (!metadataResult.valid) {
 Tokens are identified by `txid:vout`:
 
 ```javascript
-const { getGlyphId, parseGlyphId } = require('@radiantblockchain/radiantjs').Glyph.Decoder;
+const { getGlyphId, parseGlyphId } = require('@radiant-core/radiantjs').Glyph.Decoder;
 
 const glyphId = getGlyphId(txid, vout);
 // "abc123...def:0"
@@ -249,8 +249,8 @@ const { txid, vout } = parseGlyphId(glyphId);
 ## Example: Complete FT Deployment
 
 ```javascript
-const radiantjs = require('@radiantblockchain/radiantjs');
-const { GlyphProtocol, GlyphVersion } = require('@radiantblockchain/constants');
+const radiantjs = require('@radiant-core/radiantjs');
+const { GlyphProtocol, GlyphVersion } = require('@radiant-core/constants');
 
 async function deployFungibleToken(privateKey, utxos) {
   const { Glyph, Transaction, PrivateKey } = radiantjs;

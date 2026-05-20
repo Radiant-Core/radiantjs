@@ -6,13 +6,13 @@ Javascript Radiant Blockchain (RXD) library.
 https://radiantblockchain.org
 
 ```
-npm install @radiantblockchain/radiantjs
+npm install @radiant-core/radiantjs
 ```
 
 Changelog
 ---------
 
-**2.0.0** (February 2026)
+**2.0.0** (May 2026)
 
 * **V2 Hard Fork Support** — Full interpreter support for all 6 fork-gated opcodes:
   * `OP_BLAKE3` (0xee) — Blake3 hash opcode (pure JS implementation)

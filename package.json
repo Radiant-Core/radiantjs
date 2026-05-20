@@ -1,8 +1,8 @@
 {
   "name": "@radiant-core/radiantjs",
   "description": "Javascript library for Radiant Blockchain (RXD)",
-  "version": "1.9.6",
-  "author": "Radiant Blockchain <radiantblockchain@protonmail.com>",
+  "version": "2.0.0",
+  "author": "Radiant Core Developers <info@radiantcore.org>",
   "main": "index.js",
   "types": "radiant.d.ts",
   "scripts": {
@@ -33,7 +33,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/radiantblockchain/radiantjs"
+    "url": "https://github.com/Radiant-Core/radiantjs"
   },
   "browser": {
     "request": "browser-request"
