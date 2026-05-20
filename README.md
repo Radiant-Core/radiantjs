@@ -12,6 +12,10 @@ npm install @radiant-core/radiantjs
 Changelog
 ---------
 
+**2.0.3** (May 2026)
+
+* Normalize input to a plain `Uint8Array` view before delegating to `@noble/hashes` in `Hash.blake3` / `Hash.k12`. Newer @noble releases tighten `isBytes()` and reject Buffer instances from foreign realms (e.g. a `buffer/` polyfill Buffer originating in a jsdom test runner). The view conversion sidesteps this without copying.
+
 **2.0.2** (May 2026)
 
 * Fix `Hash.blake3` and `Hash.k12` to match Radiant-Core C++ consensus across all input sizes. Previous hand-rolled implementations were correct for inputs of one BLAKE3 block (≤ 64 bytes) or one K12 chunk (≤ 8191 bytes) respectively, but diverged for longer inputs — notably the 72-byte dMint preimage. Now delegate to `@noble/hashes`, which is audited and matches the C++ reference across all sizes verified.

@@ -1,7 +1,7 @@
 {
   "name": "@radiant-core/radiantjs",
   "description": "Javascript library for Radiant Blockchain (RXD)",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "author": "Radiant Core Developers <info@radiantcore.org>",
   "main": "index.js",
   "types": "radiant.d.ts",
