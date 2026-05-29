@@ -61,7 +61,6 @@ radiantjs.deps = {}
 radiantjs.deps.bnjs = require('bn.js')
 radiantjs.deps.bs58 = require('bs58')
 radiantjs.deps.Buffer = Buffer
-radiantjs.deps.elliptic = require('elliptic')
 radiantjs.deps._ = require('./lib/util/_')
 
 // Internal usage, exposed for testing/advanced tweaking

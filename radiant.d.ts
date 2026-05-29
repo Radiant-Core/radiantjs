@@ -20,7 +20,6 @@ declare module '@radiant-core/radiantjs' {
         const bnjs: any;
         const bs58: any;
         const Buffer: any;
-        const elliptic: any;
         const _: any;
     }
 
