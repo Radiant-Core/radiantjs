@@ -12,6 +12,67 @@
 
 declare module '@radiant-core/radiantjs' {
 
+    // Module-level exports
+    export const version: string;
+    export function versionGuard(version?: string): void;
+
+    export namespace deps {
+        const bnjs: any;
+        const bs58: any;
+        const Buffer: any;
+        const elliptic: any;
+        const _: any;
+    }
+
+    export const errors: any;
+
+    export namespace util {
+        const js: any;
+        const preconditions: any;
+    }
+
+    export namespace encoding {
+        class Base58 {
+            constructor(buf?: Buffer);
+            static encode(buf: Buffer): string;
+            static decode(str: string): Buffer;
+            toBuffer(): Buffer;
+            toString(): string;
+        }
+        class Base58Check {
+            constructor(buf?: Buffer);
+            static encode(buf: Buffer): string;
+            static decode(str: string): Buffer;
+            static fromString(str: string): Base58Check;
+            toBuffer(): Buffer;
+            toString(): string;
+        }
+        class BufferReader {
+            constructor(buf?: Buffer | string | object);
+            read(len: number): Buffer;
+            readStrict(len: number): Buffer;
+            readAll(): Buffer;
+            readUInt8(): number;
+            readUInt16LE(): number;
+            readUInt32LE(): number;
+            readVarintNum(): number;
+            eof(): boolean;
+        }
+        class BufferWriter {
+            constructor();
+            write(buf: Buffer): BufferWriter;
+            writeUInt8(n: number): BufferWriter;
+            writeUInt32LE(n: number): BufferWriter;
+            writeVarintNum(n: number): BufferWriter;
+            toBuffer(): Buffer;
+        }
+        class Varint {
+            constructor(n?: number | object);
+            toBuffer(): Buffer;
+            toNumber(): number;
+        }
+    }
+
     export namespace crypto {
         class BN { }
 
@@ -160,6 +221,21 @@ declare module '@radiant-core/radiantjs' {
         };
 
         constructor(data: Buffer | object);
+    }
+
+    export class MerkleBlock {
+        constructor(arg: Buffer | object | string);
+        header: BlockHeader;
+        numTransactions: number;
+        hashes: string[];
+        flags: number[];
+        validMerkleTree(): boolean;
+        filterdTxsHash(): string[];
+        toBuffer(): Buffer;
+        toString(): string;
+        toJSON(): object;
+        static fromBuffer(buf: Buffer): MerkleBlock;
+        static fromString(str: string): MerkleBlock;
     }
 
     export class PrivateKey {
@@ -443,19 +519,9 @@ declare module '@radiant-core/radiantjs' {
         toObject(): { hash: string; type: string; network: string; };
     }
 
-    export class Unit {
-        static fromBTC(amount: number): Unit;
-        static fromMilis(amount: number): Unit;
-        static fromBits(amount: number): Unit;
-        static fromSatoshis(amount: number): Unit;
-
-        constructor(amount: number, unitPreference: string);
-
-        toBTC(): number;
-        toMilis(): number;
-        toBits(): number;
-        toSatoshis(): number;
-    }
+    // Unit class is intentionally absent: radiantjs has no Unit
+    // implementation. Convert RXD ↔ photons manually:
+    //   const PHOTONS_PER_RXD = 100_000_000;
 
     export class BlockHeader {
         readonly bits: number;
@@ -712,6 +778,10 @@ declare module '@radiant-core/radiantjs' {
             HAS_PROFILE_HINT: number;
             IS_REVEAL: number;
         };
+        const ENVELOPE_FLAGS_MASK: number;
+
+        // Protocol-name lookup ({1: 'NFT', 2: 'FT', ...})
+        const ProtocolNames: { [id: number]: string };
 
         // Encoding functions
         function encodeMetadata(metadata: object): Buffer;
@@ -726,6 +796,18 @@ declare module '@radiant-core/radiantjs' {
             metadata: object | Buffer;
             files?: Buffer[];
         }): Buffer[];
+        function encodeRevealEnvelopeB(options: { metadata: object | Buffer; files?: Buffer[]; }): Buffer[];
+        function buildRevealScript(chunks: Buffer[]): any;
+        function createRevealEnvelope(metadata: object): Buffer[];
+        function decodeEnvelope(scriptBuf: Buffer): object | null;
+        function parseEnvelope(scriptBuf: Buffer): object | null;
+        function decodeMetadata(buf: Buffer): object | null;
+        function getTokenType(metadata: object): string | null;
+        function isFungible(metadata: object): boolean;
+        function isDmint(metadata: object): boolean;
+        function isMutable(metadata: object): boolean;
+        function isContainer(metadata: object): boolean;
+        function isEncrypted(metadata: object): boolean;
 
         // Decoding functions
         function isGlyphTransaction(tx: Transaction): boolean;

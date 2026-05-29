@@ -96,7 +96,7 @@ describe('Glyph Validator', function () {
             path: '/image.png',
             mime: 'image/png',
             size: 1024,
-            hash: { algo: 'sha256', hex: 'abc123' },
+            hash: { algo: 'sha256', hex: '0000000000000000000000000000000000000000000000000000000000000000' },
           },
         },
       }
@@ -176,7 +176,7 @@ describe('Glyph Validator', function () {
 
       const result = validateMetadata(metadata)
       expect(result.valid).to.be.false
-      expect(result.errors).to.include('NFT requires content.primary')
+      expect(result.errors).to.include('NFT requires content.primary or main')
     })
 
     it('should reject container without container object', function () {
@@ -190,7 +190,7 @@ describe('Glyph Validator', function () {
             path: '/image.png',
             mime: 'image/png',
             size: 1024,
-            hash: { algo: 'sha256', hex: 'abc123' },
+            hash: { algo: 'sha256', hex: '0000000000000000000000000000000000000000000000000000000000000000' },
           },
         },
       }
@@ -211,7 +211,7 @@ describe('Glyph Validator', function () {
             path: '/image.png',
             mime: 'image/png',
             size: 1024,
-            hash: { algo: 'sha256', hex: 'abc123' },
+            hash: { algo: 'sha256', hex: '0000000000000000000000000000000000000000000000000000000000000000' },
           },
         },
         royalty: {
@@ -235,7 +235,7 @@ describe('Glyph Validator', function () {
             path: '/image.png',
             mime: 'image/png',
             size: 1024,
-            hash: { algo: 'sha256', hex: 'abc123' },
+            hash: { algo: 'sha256', hex: '0000000000000000000000000000000000000000000000000000000000000000' },
           },
         },
         royalty: {

@@ -69,3 +69,11 @@ radiantjs.Transaction.sighash = require('./lib/transaction/sighash')
 
 // Glyph v2 Token Standard
 radiantjs.Glyph = require('./lib/glyph')
+
+// ECIES / Message / Mnemonic - also available as sub-bundles
+// (require('@radiant-core/radiantjs/ecies') etc.) but re-exported here so
+// `import { ECIES, Message, Mnemonic } from '@radiant-core/radiantjs'` works
+// at runtime and matches the type declarations.
+radiantjs.ECIES = require('./lib/ecies')
+radiantjs.Message = require('./lib/message')
+radiantjs.Mnemonic = require('./lib/mnemonic')

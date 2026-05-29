@@ -611,14 +611,15 @@ describe('Interpreter', function () {
   // - Higher op count limits (Radiant: 32M vs Bitcoin: 201)
   // - Re-enabled opcodes (OP_2MUL/OP_2DIV, OP_MUL, OP_LSHIFT, OP_RSHIFT)
   // - Radiant-specific opcodes (0xd0-0xd8 are valid Radiant ops, not BAD_OPCODE)
-  // - OP_CHECKSIGADD at 0xba (valid in Radiant, FIRST_UNDEFINED in Bitcoin)
+  // - OP_CHECKDATASIG at 0xba (defined in Radiant; FIRST_UNDEFINED in Bitcoin's
+  //   script_tests.json fixtures, so they expect BAD_OPCODE)
   // - Different signature format (Schnorr vs ECDSA for FORKID/REPLAY vectors)
   var radiantSkipVectors = new Set([
     231, 232, 233, 234, 239,       // 0xd0-0xd3, 0xd8: valid Radiant opcodes
     881, 893,                       // DIV/MOD with 5-byte ints: valid in Radiant (64-bit)
     899, 900, 901, 902,            // ADD with 5-byte ints: valid in Radiant (64-bit)
     1010, 1011, 1014,              // 5-byte int operations: valid in Radiant (64-bit)
-    1022,                          // 0xba: OP_CHECKSIGADD in Radiant, not BAD_OPCODE
+    1022,                          // 0xba: OP_CHECKDATASIG in Radiant, not BAD_OPCODE
     1023, 1024, 1025, 1026, 1027, 1028, 1029, // 5-byte int math: valid in Radiant
     1092, 1094, 1095,              // 201 op limit: Radiant has 32M op limit
     1274, 1277                     // CHECKSIG FORKID/REPLAY: different sig format

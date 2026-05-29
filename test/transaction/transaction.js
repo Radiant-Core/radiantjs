@@ -356,9 +356,11 @@ describe('Transaction', function () {
       actual.should.equal(expected)
     })
     it('accepts a P2SH address for change', function () {
+      // Use a 1 BSV input so the change output survives the post-V2 fee floor
+      // (FEE_PER_KB = 10_000_000 → ~2260 photon fee on a typical 2-output tx).
       var transaction = new Transaction()
-        .from(simpleUtxoWith1000000Satoshis)
-        .to(toAddress, 500000)
+        .from(simpleUtxoWith1BSV)
+        .to(toAddress, 5000000)
         .change(changeAddressP2SH)
         .sign(privateKey)
       transaction.outputs.length.should.equal(2)
@@ -485,19 +487,25 @@ describe('Transaction', function () {
 
   describe('checked serialize', function () {
     it('fails if no change address was set', function () {
+      // 1000 RAD input: unspent ≫ FEE_SECURITY_MARGIN × estimatedFee even at
+      // the post-V2 fee floor, so the "too large fee + missing change" branch
+      // still fires before the missing-signatures check.
       var transaction = new Transaction()
-        .from(simpleUtxoWith1BSV)
+        .from(simpleUtxoWith1000RAD)
         .to(toAddress, 1)
       expect(function () {
         return transaction.serialize()
       }).to.throw(errors.Transaction.ChangeAddressMissing)
     })
     it('fails if a high fee was set', function () {
+      // Same reasoning: at FEE_PER_KB = 10_000_000 the maxFee guard for a
+      // single-input single-output tx is ~339_000_000 photons; pick a fee
+      // safely above that on a 1000 RAD input so TooLarge fires.
       var transaction = new Transaction()
-        .from(simpleUtxoWith1BSV)
+        .from(simpleUtxoWith1000RAD)
         .change(changeAddress)
-        .fee(50000000)
-        .to(toAddress, 40000000)
+        .fee(50000000000)
+        .to(toAddress, 40000000000)
       expect(function () {
         return transaction.serialize()
       }).to.throw(errors.Transaction.FeeError.TooLarge)
@@ -569,10 +577,10 @@ describe('Transaction', function () {
       }).to.throw(errors.Transaction.FeeError.TooLarge)
     })
     describe('skipping checks', function () {
-      var buildSkipTest = function (builder, check, expectedError) {
+      var buildSkipTest = function (builder, check, expectedError, utxo) {
         return function () {
           var transaction = new Transaction()
-          transaction.from(simpleUtxoWith1BSV)
+          transaction.from(utxo || simpleUtxoWith1BSV)
           builder(transaction)
 
           var options = {}
@@ -589,10 +597,10 @@ describe('Transaction', function () {
       it('can skip the check for too much fee', buildSkipTest(
         function (transaction) {
           return transaction
-            .fee(50000000)
+            .fee(50000000000)
             .change(changeAddress)
             .sign(privateKey)
-        }, 'disableLargeFees', errors.Transaction.FeeError.TooLarge
+        }, 'disableLargeFees', errors.Transaction.FeeError.TooLarge, simpleUtxoWith1000RAD
       ))
       it('can skip the check that prevents dust outputs', buildSkipTest(
         function (transaction) {

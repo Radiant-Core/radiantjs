@@ -2,31 +2,33 @@
 
 const chai = require('chai')
 const expect = chai.expect
+const cbor = require('cbor-x')
 
+const encoder = require('../../lib/glyph/encoder')
 const {
   encodeMetadata,
   canonicalizeObject,
   computeCommitHash,
   encodeCommitEnvelope,
-  encodeRevealEnvelope,
-} = require('../../lib/glyph/encoder')
+  encodeRevealEnvelope
+} = encoder
 
 const { GlyphVersion, GlyphProtocol, GLYPH_MAGIC } = require('../../lib/glyph/constants')
 
 describe('Glyph Encoder', function () {
   describe('encodeMetadata', function () {
-    it('should encode metadata to JSON bytes', function () {
+    it('should encode metadata to CBOR bytes (default wire format)', function () {
       const metadata = {
         v: GlyphVersion.V2,
         type: 'token',
         p: [GlyphProtocol.GLYPH_NFT],
-        name: 'Test NFT',
+        name: 'Test NFT'
       }
 
       const encoded = encodeMetadata(metadata)
       expect(encoded).to.be.instanceof(Buffer)
 
-      const decoded = JSON.parse(encoded.toString('utf8'))
+      const decoded = cbor.decode(encoded)
       expect(decoded.v).to.equal(GlyphVersion.V2)
       expect(decoded.type).to.equal('token')
       expect(decoded.name).to.equal('Test NFT')
@@ -35,34 +37,44 @@ describe('Glyph Encoder', function () {
     it('should add version if missing', function () {
       const metadata = {
         type: 'token',
-        p: [GlyphProtocol.GLYPH_FT],
+        p: [GlyphProtocol.GLYPH_FT]
       }
 
       const encoded = encodeMetadata(metadata)
-      const decoded = JSON.parse(encoded.toString('utf8'))
+      const decoded = cbor.decode(encoded)
       expect(decoded.v).to.equal(GlyphVersion.V2)
     })
 
-    it('should produce canonical JSON (sorted keys)', function () {
+    it('should match cbor-x.encode byte-for-byte (interop with Photonic-Wallet)', function () {
+      // Photonic-Wallet uses bare `cbor-x.encode(payload)` with no
+      // canonicalization. radiantjs must produce identical bytes so that
+      // commit hashes (OP_HASH256 of these bytes) match cross-implementation.
       const metadata = {
-        z: 'last',
-        a: 'first',
-        m: 'middle',
         v: GlyphVersion.V2,
+        type: 'token',
+        p: [GlyphProtocol.GLYPH_NFT],
+        name: 'Test NFT'
       }
+      const ours = encodeMetadata(metadata)
+      const reference = Buffer.from(cbor.encode(metadata))
+      expect(ours.equals(reference)).to.equal(true)
+    })
 
-      const encoded = encodeMetadata(metadata)
-      const jsonStr = encoded.toString('utf8')
-
-      // Keys should be sorted alphabetically
-      const aIndex = jsonStr.indexOf('"a"')
-      const mIndex = jsonStr.indexOf('"m"')
-      const vIndex = jsonStr.indexOf('"v"')
-      const zIndex = jsonStr.indexOf('"z"')
-
-      expect(aIndex).to.be.lessThan(mIndex)
-      expect(mIndex).to.be.lessThan(vIndex)
-      expect(vIndex).to.be.lessThan(zIndex)
+    it('legacy JSON encoder still works when encoder.useJson = true', function () {
+      const metadata = {
+        v: GlyphVersion.V2,
+        type: 'token',
+        p: [GlyphProtocol.GLYPH_FT],
+        name: 'JSON Token'
+      }
+      encoder.useJson = true
+      try {
+        const encoded = encodeMetadata(metadata)
+        const decoded = JSON.parse(encoded.toString('utf8'))
+        expect(decoded.name).to.equal('JSON Token')
+      } finally {
+        encoder.useJson = false
+      }
     })
   })
 
@@ -103,34 +115,67 @@ describe('Glyph Encoder', function () {
     })
   })
 
-  describe('computeCommitHash', function () {
-    it('should compute SHA256 hash of metadata', function () {
+  describe('computeCommitHash (consensus: OP_HASH256 = SHA256(SHA256(x)))', function () {
+    const Hash = require('../../lib/crypto/hash')
+
+    it('should compute double-SHA256 (OP_HASH256) of metadata bytes', function () {
       const metadata = {
         v: GlyphVersion.V2,
         type: 'token',
-        p: [GlyphProtocol.GLYPH_NFT],
+        p: [GlyphProtocol.GLYPH_NFT]
       }
-
       const hash = computeCommitHash(metadata)
       expect(hash).to.be.instanceof(Buffer)
       expect(hash.length).to.equal(32)
+
+      // Must match SHA256(SHA256(encoded)) exactly - Photonic-Wallet's
+      // commit script literally executes OP_HASH256 against the reveal
+      // payload and OP_EQUALVERIFYs against this value.
+      const encoded = encodeMetadata(metadata)
+      expect(hash.equals(Hash.sha256sha256(encoded))).to.equal(true)
+
+      // Must NOT be single-SHA256 (the pre-2.0.4 bug).
+      expect(hash.equals(Hash.sha256(encoded))).to.equal(false)
     })
 
     it('should produce consistent hashes', function () {
       const metadata = { v: 2, type: 'test', p: [1] }
-
       const hash1 = computeCommitHash(metadata)
       const hash2 = computeCommitHash(metadata)
-
       expect(hash1.toString('hex')).to.equal(hash2.toString('hex'))
     })
 
-    it('should accept Buffer input', function () {
-      const metadataBytes = Buffer.from('{"p":[1],"type":"test","v":2}', 'utf8')
+    it('should accept Buffer input (raw pre-encoded bytes)', function () {
+      // Use CBOR bytes directly - this is what a real reveal scriptSig
+      // pushes on the stack for OP_HASH256.
+      const metadataBytes = Buffer.from(cbor.encode({ p: [1], type: 'test', v: 2 }))
       const hash = computeCommitHash(metadataBytes)
-
       expect(hash).to.be.instanceof(Buffer)
       expect(hash.length).to.equal(32)
+      expect(hash.equals(Hash.sha256sha256(metadataBytes))).to.equal(true)
+    })
+
+    it('end-to-end interop: commit hash matches Photonic-Wallet-style construction', function () {
+      // Reproduce Photonic-Wallet's `encodeGlyph` from
+      // packages/lib/src/token.ts:130-141:
+      //
+      //   encodedPayload = cbor-x.encode(payload)
+      //   revealScriptSig = OP_PUSH "gly" OP_PUSH <encodedPayload>
+      //   payloadHash = SHA256(SHA256(encodedPayload))
+      //
+      // and verify radiantjs produces the same payloadHash. Payload must
+      // include `v` because radiantjs auto-injects it otherwise (deliberate
+      // convenience for v2-only consumers).
+      const payload = {
+        v: GlyphVersion.V2,
+        p: [GlyphProtocol.GLYPH_NFT],
+        attrs: { artist: 'satoshi', year: 2026 },
+        name: 'Genesis Glyph'
+      }
+      const encodedPayload = Buffer.from(cbor.encode(payload))
+      const wallet_payloadHash = Hash.sha256sha256(encodedPayload)
+      const radiantjs_commitHash = computeCommitHash(payload)
+      expect(radiantjs_commitHash.equals(wallet_payloadHash)).to.equal(true)
     })
   })
 
@@ -197,9 +242,9 @@ describe('Glyph Encoder', function () {
       expect(header[3]).to.equal(GlyphVersion.V2)
       expect(header[4] & 0x80).to.equal(0x80) // IS_REVEAL flag
 
-      // Second chunk is metadata
+      // Second chunk is metadata (CBOR-encoded)
       const metadataChunk = chunks[1]
-      const decoded = JSON.parse(metadataChunk.toString('utf8'))
+      const decoded = cbor.decode(metadataChunk)
       expect(decoded.name).to.equal('Test Token')
     })
 

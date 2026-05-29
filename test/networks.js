@@ -119,35 +119,50 @@ describe('Networks', function () {
     expect(networks.get('livenet').name).to.equal('livenet')
   })
 
-  it('should have bchtest cashAddrPrefix', function () {
-    expect(networks.get('testnet').cashAddrPrefix).to.equal('bchtest')
+  it('should have radtest cashAddrPrefix', function () {
+    expect(networks.get('testnet').cashAddrPrefix).to.equal('radtest')
   })
 
-  it('should have bchreg cashAddrPrefix', function () {
-    expect(networks.get('regtest').cashAddrPrefix).to.equal('bchreg')
+  it('should have radreg cashAddrPrefix', function () {
+    expect(networks.get('regtest').cashAddrPrefix).to.equal('radreg')
   })
 
-  it('should have bchreg cashAddrPrefix after enableRegtest is called', function () {
+  it('should have radreg cashAddrPrefix after enableRegtest is called', function () {
     var network = networks.get('testnet')
     networks.enableRegtest()
-    expect(network.cashAddrPrefix).to.equal('bchreg')
+    expect(network.cashAddrPrefix).to.equal('radreg')
   })
 
-  it('should have bchtest cashAddrPrefix after disableRegtest is called', function () {
+  it('should have radtest cashAddrPrefix after disableRegtest is called', function () {
     var network = networks.get('testnet')
     networks.disableRegtest()
-    expect(network.cashAddrPrefix).to.equal('bchtest')
+    expect(network.cashAddrPrefix).to.equal('radtest')
   })
-  it('should have bsvstn cashAddrPrefix after enableStn is called', function () {
+  it('should have radstn cashAddrPrefix after enableStn is called', function () {
     var network = networks.get('testnet')
     networks.enableStn()
-    expect(network.cashAddrPrefix).to.equal('bsvstn')
+    expect(network.cashAddrPrefix).to.equal('radstn')
   })
 
-  it('should have bchtest cashAddrPrefix after disableStn is called', function () {
+  it('should have radtest cashAddrPrefix after disableStn is called', function () {
     var network = networks.get('testnet')
     networks.disableStn()
-    expect(network.cashAddrPrefix).to.equal('bchtest')
+    expect(network.cashAddrPrefix).to.equal('radtest')
+  })
+
+  it('should have Radiant mainnet port 7333', function () {
+    expect(networks.get('livenet').port).to.equal(7333)
+  })
+
+  it('should have Radiant mainnet cashAddrPrefix radaddr', function () {
+    expect(networks.get('livenet').cashAddrPrefix).to.equal('radaddr')
+  })
+
+  it('cashAddrPrefixArray does not crash when stn is enabled', function () {
+    var network = networks.get('testnet')
+    networks.enableStn()
+    expect(function () { return network.cashAddrPrefixArray }).to.not.throw()
+    networks.disableStn()
   })
 
   it('converts to string using the "name" property', function () {

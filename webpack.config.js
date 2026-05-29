@@ -14,6 +14,12 @@ module.exports = {
   plugins: [
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer']
+    }),
+    // Make hash.js dispatcher choose the browser variant unconditionally
+    // (the Node `crypto` module is unavailable in browsers, and even where
+    // a polyfill exists it lacks createHash).
+    new webpack.DefinePlugin({
+      'process.browser': JSON.stringify(true)
     })
   ],
   output: {

@@ -91,20 +91,22 @@ describe('Glyph Decoder', function () {
   })
 
   describe('parseGlyphId', function () {
+    // Real txids are 64-char hex - parseGlyphId enforces this strictly now.
+    const fullTxid = 'a'.repeat(64)
     it('should parse Glyph ID correctly', function () {
-      const { txid, vout } = parseGlyphId('abc123def456:0')
-      expect(txid).to.equal('abc123def456')
+      const { txid, vout } = parseGlyphId(fullTxid + ':0')
+      expect(txid).to.equal(fullTxid)
       expect(vout).to.equal(0)
     })
 
     it('should handle different vout values', function () {
-      expect(parseGlyphId('txid:0').vout).to.equal(0)
-      expect(parseGlyphId('txid:1').vout).to.equal(1)
-      expect(parseGlyphId('txid:255').vout).to.equal(255)
+      expect(parseGlyphId(fullTxid + ':0').vout).to.equal(0)
+      expect(parseGlyphId(fullTxid + ':1').vout).to.equal(1)
+      expect(parseGlyphId(fullTxid + ':255').vout).to.equal(255)
     })
 
     it('should be inverse of getGlyphId', function () {
-      const originalTxid = 'a1b2c3d4e5f6'
+      const originalTxid = 'b'.repeat(64)
       const originalVout = 3
 
       const glyphId = getGlyphId(originalTxid, originalVout)
@@ -112,6 +114,13 @@ describe('Glyph Decoder', function () {
 
       expect(txid).to.equal(originalTxid)
       expect(vout).to.equal(originalVout)
+    })
+
+    it('rejects malformed glyph ids', function () {
+      expect(function () { parseGlyphId('not_a_txid:0') }).to.throw()
+      expect(function () { parseGlyphId(fullTxid + ':abc') }).to.throw()
+      expect(function () { parseGlyphId(fullTxid) }).to.throw()
+      expect(function () { parseGlyphId(fullTxid + ':-1') }).to.throw()
     })
   })
 })
