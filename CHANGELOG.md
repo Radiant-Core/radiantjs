@@ -2,6 +2,22 @@
 
 All notable changes to `@radiant-core/radiantjs` are documented here.
 
+## 2.0.6 — 2026-06-12
+
+### Fixed
+
+- **Removed the load-order dependency in the HD-key module-load invariants.**
+  `lib/hdprivatekey.js` and `lib/hdpublickey.js` ran three top-level
+  `assert(...)` byte-layout sanity checks at module evaluation. Under some
+  bundler emit orders — concretely, Rollup/Vite code-splitting radiantjs into
+  a lazy chunk — the module-scope `assert` import is not yet initialized when
+  those lines run, crashing every consumer of the chunk with
+  `TypeError: e is not a function` (this white-screened Photonic Wallet's
+  `/predict` build). The checks are now self-contained
+  `if (!cond) throw new Error(...)` statements: the same invariants are
+  enforced, with no dependency on import initialization order. No functional
+  change — 3508 tests pass, HD derivation output is identical.
+
 ## 2.0.5 — 2026-05-29
 
 ### Security
